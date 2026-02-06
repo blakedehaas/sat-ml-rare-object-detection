@@ -1,0 +1,21 @@
+# --- Core Data Science & EDA ---
+numpy>=1.23.5
+pandas>=2.0.0
+matplotlib>=3.7.1
+seaborn>=0.12.2
+scipy>=1.10.1
+tabulate>=0.9.0  # Required for pandas .to_markdown()
+pyarrow>=12.0.0  # Required to read .parquet files
+
+# --- Geospatial & Image Processing ---
+opencv-python>=4.8.0
+Pillow>=9.5.0
+tqdm>=4.65.0
+
+# --- Deep Learning (YOLOv11, v12, v26) ---
+ultralytics>=8.4.12
+torch>=2.1.0
+torchvision>=0.16.0
+
+# --- Experiment Tracking ---
+# wandb
