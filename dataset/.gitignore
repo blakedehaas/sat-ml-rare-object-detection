@@ -3,5 +3,9 @@
 
 # Do not ignore exploratory_data_analysis.py
 !exploratory_data_analysis.py
+# Do not ignore stratified_split.py
+!stratified_split.py
+# Do not ignore rare_subset.py
+!rare_subset.py
 # Do not ignore the .gitignore file itself
 !.gitignore
