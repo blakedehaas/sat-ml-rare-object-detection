@@ -1,0 +1,56 @@
+#!/bin/bash
+#PBS -N xview_yolo_sweep
+#PBS -A UCUL0008
+#PBS -l select=1:ncpus=12:ngpus=1:mem=64GB
+#PBS -l walltime=24:00:00
+#PBS -q casper
+#PBS -j oe
+#PBS -m abe
+#PBS -M blake.dehaas@lasp.colorado.edu
+
+# Navigate to your project directory
+# Update this path if your xView project is in a different subdirectory
+cd /glade/campaign/univ/ucul0008/auroral_precipitation_ml/clare 
+
+echo "Job started at: $(date)"
+echo "Job running on host: $(hostname)"
+echo "Job ID: $PBS_JOBID"
+echo "Working directory: $(pwd)"
+echo ""
+
+# Load necessary modules (Keeping your established NCAR environment)
+echo "Loading modules..."
+module purge
+module load ncarenv/24.12 
+module load conda
+module load cuda/12.8.0
+echo "Modules loaded."
+echo ""
+
+# Activate your environment
+echo "Activating clare_venv"
+source clare_venv/bin/activate
+echo "Environment activated: $(which python)"
+echo ""
+
+# Ensure W&B is online to sync sweep results in real-time
+export WANDB_MODE=online
+
+# Display GPU hardware information for the logs
+echo "GPU(s) allocated by PBS:"
+nvidia-smi
+echo ""
+
+# Run your Bayesian Optimization script
+echo "Running Bayesian Optimization Sweep: bayesian_optimization.py..."
+echo "Sweep started at: $(date)"
+
+# This triggers the script we updated earlier, 
+# which handles both the 10 sweep trials and the final training.
+python bayesian_optimization.py
+
+EXIT_CODE=$?
+echo "Python script finished with exit code: $EXIT_CODE"
+echo ""
+
+echo "Job finished at: $(date)"
