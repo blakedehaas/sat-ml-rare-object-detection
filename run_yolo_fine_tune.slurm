@@ -1,8 +1,8 @@
 #!/bin/bash
 #SBATCH --job-name=fine_tune_yolo
-#SBATCH --partition=atesting_mi100
+#SBATCH --partition=atesting_a100
 #SBATCH --qos=testing
-#SBATCH --gres=gpu:mi100:1
+#SBATCH --gres=gpu:a100_3g.20gb:1
 #SBATCH --nodes=1
 #SBATCH --ntasks=1
 #SBATCH --cpus-per-task=8
@@ -31,10 +31,12 @@ source yolo_venv/bin/activate
 # -------------------------
 echo "Job started on $(hostname)"
 echo "CUDA visible devices: $CUDA_VISIBLE_DEVICES"
+nvidia-smi || echo "nvidia-smi not available"
 python - <<EOF
 import torch
 print("Torch version:", torch.__version__)
 print("CUDA available:", torch.cuda.is_available())
+print("CUDA device count:", torch.cuda.device_count())
 if torch.cuda.is_available():
     print("GPU:", torch.cuda.get_device_name(0))
 EOF
