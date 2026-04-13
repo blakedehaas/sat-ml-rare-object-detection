@@ -23,12 +23,8 @@ def calculate_mean_per_class_map50(metrics, rare_indices):
     For each class, compute AP at IoU=0.50, then take the mean across all 60 classes.
     """
     ap50_per_class = [metrics.box.ap50[i] for i in range(len(metrics.names))]
-    print(f"DEBUG box.ap50 length: {len(ap50_per_class)}")
-    print(f"DEBUG box.ap50 values: {ap50_per_class}")
     
     maps_per_class = list(metrics.maps)
-    print(f"DEBUG maps sample: {maps_per_class[:5]}")
-    print(f"DEBUG maps length: {len(maps_per_class)}")
 
     rare_aps = [ap50_per_class[i] for i in range(len(metrics.names))
                 if i in rare_indices]
@@ -43,6 +39,36 @@ def calculate_mean_per_class_map50(metrics, rare_indices):
     mean_per_class_map50 = np.mean(all_aps)
 
     return mean_per_class_map50, ap50_per_class, rare_mean, common_mean
+
+def calculate_map50(metrics, rare_indices):
+    """
+    Calculate mAP50.
+    For each class, compute AP at IoU=0.50, multiply by the number of instances,
+    aggregate, then take the mean across all instances.
+    """
+    ap50_per_class = [metrics.box.ap50[i] for i in range(len(metrics.names))]
+    aggregate_instance_ap = 0
+    rare_aggregate_instance_ap = 0
+    total_instances = 0
+    rare_total_instances = 0
+    
+    for i, name in metrics.names.items():
+        ap = ap50_per_class[i] if i < len(ap50_per_class) else 0.0
+        instances = metrics.nt_per_class[i] if i < len(metrics.nt_per_class) else 0
+        instance_ap = ap * instances
+        aggregate_instance_ap += instance_ap
+        total_instances += instances
+        if i in rare_indices:
+            rare_ap = ap50_per_class[i] if i < len(ap50_per_class) else 0.0
+            rare_instances = metrics.nt_per_class[i] if i < len(metrics.nt_per_class) else 0
+            rare_instance_ap = rare_ap * rare_instances
+            rare_aggregate_instance_ap += rare_instance_ap
+            rare_total_instances += rare_instances
+        
+    mAP50 = aggregate_instance_ap / total_instances
+    rare_mAP50 = rare_aggregate_instance_ap / rare_total_instances
+    
+    return mAP50, rare_mAP50
 
 def evaluate_model(model_path, dataset_yaml, split='val'):
     """Load model and run evaluation on the given dataset split."""
@@ -60,10 +86,11 @@ def evaluate_model(model_path, dataset_yaml, split='val'):
 
 def format_results(metrics, dataset_name, model_name):
     """Format and return results as a string."""
-    map50 = metrics.results_dict['metrics/mAP50(B)']
+    mAP50, rare_mAP50 = calculate_map50(metrics, RARE_CLASS_INDICES)
     weighted_mean, ap50_per_class, rare_mean, common_mean = calculate_mean_per_class_map50(
         metrics, RARE_CLASS_INDICES
     )
+    
 
     lines = []
     lines.append("=" * 70)
@@ -72,7 +99,8 @@ def format_results(metrics, dataset_name, model_name):
     lines.append("=" * 70)
     lines.append("")
     lines.append("  --- Overall Metrics ---")
-    lines.append(f"  mAP@50:                        {map50:.4f} ({map50*100:.2f}%)")
+    lines.append(f"  mAP@50:                        {mAP50:.4f} ({mAP50*100:.2f}%)")
+    lines.append(f"  Rare mAP@50                    {rare_mAP50:.4f} ({rare_mAP50*100:.2f}%)")
     lines.append(f"  Mean Per-Class mAP@50:         {weighted_mean:.4f} ({weighted_mean*100:.2f}%)")
     lines.append(f"    Common Class Mean mAP@50:    {common_mean:.4f} ({common_mean*100:.2f}%)")
     lines.append(f"    Rare Class Mean mAP@50:      {rare_mean:.4f} ({rare_mean*100:.2f}%)")
